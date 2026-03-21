@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Eye, Ruler, Zap, Minus, Plus } from "lucide-react";
+import { ArrowLeft, MapPin, Eye, Ruler, Zap, Minus, Plus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { billboards } from "@/lib/data";
+import { billboards, billboardReviews } from "@/lib/data";
+import BillboardCard from "@/components/BillboardCard";
 import billboard1 from "@/assets/billboard-1.jpg";
 import billboard2 from "@/assets/billboard-2.jpg";
 import billboard3 from "@/assets/billboard-3.jpg";
@@ -26,6 +27,13 @@ const BillboardDetailPage = () => {
 
   const img = imageMap[b.image] || billboard1;
   const totalPrice = b.price * days;
+  const reviews = billboardReviews.filter((r) => r.billboardId === b.id);
+  const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : null;
+
+  // Related billboards: same city or same tags, excluding current
+  const related = billboards
+    .filter((x) => x.id !== b.id && (x.city === b.city || x.tags.some((t) => b.tags.includes(t))))
+    .slice(0, 4);
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -52,6 +60,14 @@ const BillboardDetailPage = () => {
         <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
           <MapPin className="w-3.5 h-3.5" /> {b.location}, {b.city}
         </p>
+
+        {avgRating && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <Star className="w-4 h-4 text-warning fill-warning" />
+            <span className="text-sm font-semibold text-foreground">{avgRating}</span>
+            <span className="text-xs text-muted-foreground">({reviews.length} reviews)</span>
+          </div>
+        )}
 
         {/* Specs */}
         <div className="grid grid-cols-3 gap-3 mt-5">
@@ -102,6 +118,41 @@ const BillboardDetailPage = () => {
             <span className="text-lg font-bold text-foreground">₹{totalPrice.toLocaleString()}</span>
           </div>
         </div>
+
+        {/* Reviews */}
+        {reviews.length > 0 && (
+          <div className="mt-6">
+            <h3 className="font-semibold text-foreground text-sm mb-3">Reviews ({reviews.length})</h3>
+            <div className="space-y-3">
+              {reviews.map((r) => (
+                <div key={r.id} className="p-3 rounded-xl bg-card card-shadow">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">{r.user}</span>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: r.rating }).map((_, i) => (
+                        <Star key={i} className="w-3 h-3 text-warning fill-warning" />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{r.comment}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">{r.date}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Related Billboards */}
+        {related.length > 0 && (
+          <div className="mt-6">
+            <h3 className="font-semibold text-foreground text-sm mb-3">You might also like</h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none -mx-5 px-5">
+              {related.map((rb) => (
+                <BillboardCard key={rb.id} billboard={rb} />
+              ))}
+            </div>
+          </div>
+        )}
       </motion.div>
 
       {/* Fixed CTA */}

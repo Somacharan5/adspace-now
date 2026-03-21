@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Radio, Calendar, MapPin, Eye } from "lucide-react";
+import { Radio, Calendar, MapPin, Eye, ChevronRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 
 const campaigns = [
@@ -47,16 +47,20 @@ const CampaignsPage = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="p-4 rounded-xl bg-card card-shadow"
+            onClick={() => navigate(`/campaign/${c.id}`)}
+            className="p-4 rounded-xl bg-card card-shadow cursor-pointer active:scale-[0.98] transition-transform"
           >
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-semibold text-foreground text-sm">{c.name}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">{c.id}</p>
               </div>
-              <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium ${statusColor[c.status] || statusColor.Completed}`}>
-                {c.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium ${statusColor[c.status] || statusColor.Completed}`}>
+                  {c.status}
+                </span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3 mt-4">

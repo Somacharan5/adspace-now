@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import logo from "@/assets/xhats-logo.png";
+import logo from "@/assets/xads-logo.png";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ const LoginPage = () => {
         className="w-full max-w-sm"
       >
         <div className="flex justify-center mb-10">
-          <img src={logo} alt="XHats" className="h-12" />
+          <img src={logo} alt="Xads" className="h-12" />
         </div>
 
         <div className="space-y-6">
