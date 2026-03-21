@@ -28,7 +28,7 @@ const LoginPage = () => {
         className="w-full max-w-sm"
       >
         <div className="flex justify-center mb-10">
-          <img src={logo} alt="XHats" className="h-12" />
+          <img src={logo} alt="Xads" className="h-12" />
         </div>
 
         <div className="space-y-6">

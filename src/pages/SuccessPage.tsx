@@ -27,7 +27,7 @@ const SuccessPage = () => {
         <div className="mt-6 p-4 rounded-xl bg-secondary text-left space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Campaign ID</span>
-            <span className="font-medium text-foreground">XH-{Math.random().toString(36).substring(2, 8).toUpperCase()}</span>
+            <span className="font-medium text-foreground">XA-{Math.random().toString(36).substring(2, 8).toUpperCase()}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Start Date</span>
