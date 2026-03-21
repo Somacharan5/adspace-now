@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import logo from "@/assets/xhats-logo.png";
+import logo from "@/assets/xads-logo.png";
 
 const LoginPage = () => {
   const navigate = useNavigate();
