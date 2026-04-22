@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Shield, CreditCard, Smartphone, Building2 } from "lucide-react";
+import { ArrowLeft, Shield, CreditCard, Smartphone, Building2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const paymentMethods = [
   { id: "upi", icon: Smartphone, label: "UPI", desc: "GPay, PhonePe, Paytm" },
@@ -13,18 +16,72 @@ const paymentMethods = [
 const PaymentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const state = (location.state as any) || {};
   const billboard = state.billboard;
   const days = state.days || 7;
+  const campaignName = state.campaignName || "Untitled Campaign";
+  const startDate = state.startDate || new Date().toISOString().slice(0, 10);
+  const creativeUrl = state.creativeUrl || null;
   const [method, setMethod] = useState("upi");
+  const [loading, setLoading] = useState(false);
 
   const subtotal = billboard ? billboard.price * days : 45000;
   const gst = Math.round(subtotal * 0.18);
   const total = subtotal + gst;
 
+  const handlePay = async () => {
+    if (!user) {
+      toast.error("Please sign in to publish your campaign");
+      return;
+    }
+    if (!billboard) {
+      toast.error("No billboard selected");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data: campaign, error: cErr } = await supabase
+        .from("campaigns")
+        .insert({
+          user_id: user.id,
+          name: campaignName,
+          start_date: startDate,
+          duration_days: days,
+          total_cost: total,
+          status: "printing",
+          creative_url: creativeUrl,
+        })
+        .select()
+        .single();
+      if (cErr) throw cErr;
+
+      const { error: bErr } = await supabase.from("campaign_billboards").insert({
+        campaign_id: campaign.id,
+        billboard_id: String(billboard.id),
+        billboard_title: billboard.title,
+        billboard_city: billboard.city || billboard.location || "Unknown",
+        billboard_location: billboard.location || null,
+        billboard_image: billboard.image || null,
+        billboard_lat: billboard.lat ?? null,
+        billboard_lng: billboard.lng ?? null,
+        price_per_day: billboard.price,
+        status: "printing",
+      });
+      if (bErr) throw bErr;
+
+      toast.success("Campaign published!");
+      navigate("/success", { state: { ...state, campaignId: campaign.id } });
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to publish campaign");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-28">
-      {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-4 pt-12 pb-3">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1">
@@ -35,10 +92,13 @@ const PaymentPage = () => {
       </div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="px-5 py-6 space-y-5">
-        {/* Order Summary */}
         <div className="p-4 rounded-xl bg-card card-shadow">
           <h3 className="font-semibold text-foreground text-sm mb-3">Order Summary</h3>
           <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Campaign</span>
+              <span className="text-foreground">{campaignName}</span>
+            </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Billboard</span>
               <span className="text-foreground">{billboard?.title || "MG Road Premium"}</span>
@@ -62,7 +122,6 @@ const PaymentPage = () => {
           </div>
         </div>
 
-        {/* Payment Methods */}
         <div>
           <h3 className="font-semibold text-foreground text-sm mb-3">Payment Method</h3>
           <div className="space-y-2">
@@ -92,13 +151,13 @@ const PaymentPage = () => {
         </div>
       </motion.div>
 
-      {/* Fixed CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-4 glass border-t border-border">
         <Button
-          onClick={() => navigate("/success", { state })}
+          onClick={handlePay}
+          disabled={loading}
           className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold text-base"
         >
-          Confirm & Pay ₹{total.toLocaleString()}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : `Confirm & Pay ₹${total.toLocaleString()}`}
         </Button>
       </div>
     </div>
