@@ -1,0 +1,118 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Building2, Activity, IndianRupee, TrendingUp, Plus, Bell, Cloud, Printer, Briefcase, ShoppingBag, Users } from "lucide-react";
+import VendorLayout from "@/components/vendor/VendorLayout";
+import MetricCard from "@/components/vendor/MetricCard";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+const VendorDashboardPage = () => {
+  const { user, primaryRole } = useAuth();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({ listings: 0, available: 0, booked: 0, revenue: 0 });
+  const [campaigns, setCampaigns] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      if (primaryRole === "property_owner") {
+        const { data: listings } = await supabase.from("listings").select("id,status,price_per_day").eq("owner_id", user.id);
+        const all = listings ?? [];
+        setStats({
+          listings: all.length,
+          available: all.filter((l) => l.status === "available").length,
+          booked: all.filter((l) => l.status === "booked").length,
+          revenue: all.filter((l) => l.status === "booked").reduce((s, l) => s + (l.price_per_day ?? 0) * 30, 0),
+        });
+      } else if (primaryRole === "agency") {
+        const { count } = await supabase.from("campaigns").select("id", { count: "exact", head: true });
+        setCampaigns(count ?? 0);
+      }
+      setLoading(false);
+    })();
+  }, [user, primaryRole]);
+
+  if (loading) {
+    return <VendorLayout><div className="flex items-center justify-center h-64"><div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div></VendorLayout>;
+  }
+
+  if (primaryRole === "property_owner") {
+    const occupancy = stats.listings ? Math.round((stats.booked / stats.listings) * 100) : 0;
+    return (
+      <VendorLayout>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Property Owner Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage your billboard inventory</p>
+          </div>
+          <Button onClick={() => navigate("/vendor/listings/new")} className="gap-2 rounded-xl"><Plus className="w-4 h-4" /> Add Listing</Button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <MetricCard icon={Building2} label="Total Listings" value={stats.listings} accent="accent" />
+          <MetricCard icon={Activity} label="Active Campaigns" value={stats.booked} accent="success" />
+          <MetricCard icon={IndianRupee} label="Est. Monthly Revenue" value={`₹${(stats.revenue / 1000).toFixed(0)}k`} accent="warning" />
+          <MetricCard icon={TrendingUp} label="Occupancy Rate" value={`${occupancy}%`} hint={`${stats.booked} of ${stats.listings} booked`} accent="destructive" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-center gap-2 mb-3"><Bell className="w-4 h-4 text-accent" /><h3 className="font-semibold">Notifications</h3></div>
+            <p className="text-sm text-muted-foreground">No new notifications. Booking requests will appear here.</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-center gap-2 mb-3"><Cloud className="w-4 h-4 text-accent" /><h3 className="font-semibold">Weather Insights</h3></div>
+            <p className="text-sm text-muted-foreground">Add a listing with location to see weather-based visibility forecasts.</p>
+          </div>
+        </div>
+      </VendorLayout>
+    );
+  }
+
+  if (primaryRole === "printing_vendor") {
+    return (
+      <VendorLayout>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Printing Vendor Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1 mb-6">Manage your printing jobs</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <MetricCard icon={Printer} label="Active Jobs" value={0} accent="accent" />
+          <MetricCard icon={Bell} label="Incoming Requests" value={0} accent="warning" />
+          <MetricCard icon={Building2} label="Nearby Owners" value={0} accent="success" />
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-6 mt-6 text-center">
+          <p className="text-sm text-muted-foreground">Job marketplace coming in Phase 2 — you'll receive printing requests from active campaigns.</p>
+        </div>
+      </VendorLayout>
+    );
+  }
+
+  if (primaryRole === "agency") {
+    return (
+      <VendorLayout>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Agency Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1 mb-6">Manage campaigns across clients</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <MetricCard icon={Briefcase} label="Campaigns Managed" value={campaigns} accent="accent" />
+          <MetricCard icon={Users} label="Clients" value={0} accent="success" />
+          <MetricCard icon={Building2} label="Listings Used" value={0} accent="warning" />
+        </div>
+      </VendorLayout>
+    );
+  }
+
+  // business fallback
+  return (
+    <VendorLayout>
+      <h1 className="text-2xl md:text-3xl font-bold text-foreground">Business Dashboard</h1>
+      <p className="text-sm text-muted-foreground mt-1 mb-6">Your campaigns at a glance</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <MetricCard icon={Activity} label="Active Campaigns" value={0} accent="accent" />
+        <MetricCard icon={ShoppingBag} label="Orders Placed" value={0} accent="success" />
+        <MetricCard icon={Building2} label="Saved Listings" value={0} accent="warning" />
+        <MetricCard icon={TrendingUp} label="Recommendations" value={0} accent="destructive" />
+      </div>
+    </VendorLayout>
+  );
+};
+
+export default VendorDashboardPage;
