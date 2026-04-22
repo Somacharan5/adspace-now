@@ -1,1 +1,7 @@
 project_id = "vyfxzucssrmaiitskxll"
+
+[functions.get-weather]
+verify_jwt = false
+
+[functions.xads-consultant]
+verify_jwt = false
