@@ -213,6 +213,81 @@ export type Database = {
         }
         Relationships: []
       }
+      listings: {
+        Row: {
+          area: string | null
+          city: string
+          created_at: string
+          description: string | null
+          height_ft: number | null
+          id: string
+          images: string[]
+          latitude: number | null
+          legacy_id: string | null
+          longitude: number | null
+          owner_id: string | null
+          price_per_day: number
+          price_per_month: number | null
+          price_per_week: number | null
+          size: string | null
+          status: Database["public"]["Enums"]["listing_status"]
+          tags: string[]
+          title: string
+          traffic_estimate: string | null
+          type: string
+          updated_at: string
+          width_ft: number | null
+        }
+        Insert: {
+          area?: string | null
+          city: string
+          created_at?: string
+          description?: string | null
+          height_ft?: number | null
+          id?: string
+          images?: string[]
+          latitude?: number | null
+          legacy_id?: string | null
+          longitude?: number | null
+          owner_id?: string | null
+          price_per_day?: number
+          price_per_month?: number | null
+          price_per_week?: number | null
+          size?: string | null
+          status?: Database["public"]["Enums"]["listing_status"]
+          tags?: string[]
+          title: string
+          traffic_estimate?: string | null
+          type?: string
+          updated_at?: string
+          width_ft?: number | null
+        }
+        Update: {
+          area?: string | null
+          city?: string
+          created_at?: string
+          description?: string | null
+          height_ft?: number | null
+          id?: string
+          images?: string[]
+          latitude?: number | null
+          legacy_id?: string | null
+          longitude?: number | null
+          owner_id?: string | null
+          price_per_day?: number
+          price_per_month?: number | null
+          price_per_week?: number | null
+          size?: string | null
+          status?: Database["public"]["Enums"]["listing_status"]
+          tags?: string[]
+          title?: string
+          traffic_estimate?: string | null
+          type?: string
+          updated_at?: string
+          width_ft?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -282,6 +357,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_role_selections: {
+        Row: {
+          primary_role: Database["public"]["Enums"]["app_role"]
+          selected_at: string
+          user_id: string
+        }
+        Insert: {
+          primary_role: Database["public"]["Enums"]["app_role"]
+          selected_at?: string
+          user_id: string
+        }
+        Update: {
+          primary_role?: Database["public"]["Enums"]["app_role"]
+          selected_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -338,7 +431,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role:
+        | "admin"
+        | "user"
+        | "property_owner"
+        | "printing_vendor"
+        | "agency"
+        | "business"
       banner_status: "printing" | "live" | "scheduled_off" | "off"
       campaign_status:
         | "draft"
@@ -348,6 +447,7 @@ export type Database = {
         | "scheduled_off"
         | "ended"
       invite_status: "pending" | "accepted" | "declined"
+      listing_status: "available" | "booked" | "inactive"
       team_role: "viewer" | "commenter" | "editor" | "payer"
     }
     CompositeTypes: {
@@ -476,7 +576,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: [
+        "admin",
+        "user",
+        "property_owner",
+        "printing_vendor",
+        "agency",
+        "business",
+      ],
       banner_status: ["printing", "live", "scheduled_off", "off"],
       campaign_status: [
         "draft",
@@ -487,6 +594,7 @@ export const Constants = {
         "ended",
       ],
       invite_status: ["pending", "accepted", "declined"],
+      listing_status: ["available", "booked", "inactive"],
       team_role: ["viewer", "commenter", "editor", "payer"],
     },
   },
