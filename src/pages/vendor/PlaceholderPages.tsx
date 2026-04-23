@@ -1,5 +1,5 @@
 import VendorLayout from "@/components/vendor/VendorLayout";
-import { MessageSquare, BarChart3, Bell } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 
 const ComingSoon = ({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) => (
   <VendorLayout>
@@ -9,14 +9,12 @@ const ComingSoon = ({ icon: Icon, title, desc }: { icon: any; title: string; des
       <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
         <Icon className="w-5 h-5 text-accent" />
       </div>
-      <h3 className="font-semibold text-foreground">Coming in Phase 2</h3>
+      <h3 className="font-semibold text-foreground">Coming soon</h3>
       <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-        This module is part of the next build phase. The foundation is ready — we'll wire it up next.
+        Performance trends and revenue analytics will land in the next phase.
       </p>
     </div>
   </VendorLayout>
 );
 
-export const VendorMessagesPage = () => <ComingSoon icon={MessageSquare} title="Messages" desc="Real-time chat with owners, vendors, and businesses" />;
 export const VendorAnalyticsPage = () => <ComingSoon icon={BarChart3} title="Analytics" desc="Performance trends across your listings" />;
-export const VendorNotificationsPage = () => <ComingSoon icon={Bell} title="Notifications" desc="Booking requests, status updates, system alerts" />;
