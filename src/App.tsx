@@ -24,11 +24,17 @@ import AccountSettingsPage from "./pages/AccountSettingsPage";
 import BusinessProfilePage from "./pages/BusinessProfilePage";
 import TeamPage from "./pages/TeamPage";
 import TalkToXadsPage from "./pages/TalkToXadsPage";
+import OrdersListPage from "./pages/OrdersListPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
+import MessagesListPage from "./pages/MessagesListPage";
+import ChatThreadPage from "./pages/ChatThreadPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import VendorDashboardPage from "./pages/vendor/VendorDashboardPage";
 import VendorListingsPage from "./pages/vendor/VendorListingsPage";
 import ListingFormPage from "./pages/vendor/ListingFormPage";
 import VendorMapPage from "./pages/vendor/VendorMapPage";
-import { VendorMessagesPage, VendorAnalyticsPage, VendorNotificationsPage } from "./pages/vendor/PlaceholderPages";
+import VendorOrdersPage from "./pages/vendor/VendorOrdersPage";
+import { VendorAnalyticsPage } from "./pages/vendor/PlaceholderPages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,15 +72,24 @@ const App = () => (
             <Route path="/profile/team" element={<RoleGate allow="any"><TeamPage /></RoleGate>} />
             <Route path="/talk-to-xads" element={protect(<TalkToXadsPage />)} />
 
+            {/* Phase 2: shared order + chat + notifications */}
+            <Route path="/orders" element={protect(<OrdersListPage />)} />
+            <Route path="/orders/:id" element={<RoleGate allow="any"><OrderDetailPage /></RoleGate>} />
+            <Route path="/messages" element={protect(<MessagesListPage />)} />
+            <Route path="/messages/:id" element={<RoleGate allow="any"><ChatThreadPage /></RoleGate>} />
+            <Route path="/notifications" element={protect(<NotificationsPage />)} />
+
             {/* Vendor portal */}
             <Route path="/vendor/dashboard" element={vendor(<VendorDashboardPage />)} />
             <Route path="/vendor/listings" element={owner(<VendorListingsPage />)} />
             <Route path="/vendor/listings/new" element={owner(<ListingFormPage />)} />
             <Route path="/vendor/listings/:id" element={owner(<ListingFormPage />)} />
             <Route path="/vendor/map" element={vendor(<VendorMapPage />)} />
-            <Route path="/vendor/messages" element={vendor(<VendorMessagesPage />)} />
+            <Route path="/vendor/orders" element={owner(<VendorOrdersPage />)} />
+            <Route path="/vendor/orders/:id" element={<RoleGate allow="any"><OrderDetailPage /></RoleGate>} />
+            <Route path="/vendor/messages" element={vendor(<MessagesListPage vendorMode />)} />
             <Route path="/vendor/analytics" element={vendor(<VendorAnalyticsPage />)} />
-            <Route path="/vendor/notifications" element={vendor(<VendorNotificationsPage />)} />
+            <Route path="/vendor/notifications" element={vendor(<NotificationsPage vendorMode />)} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
