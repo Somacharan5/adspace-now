@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Eye, Ruler, Zap, Minus, Plus, Star } from "lucide-react";
+import { ArrowLeft, MapPin, Eye, Ruler, Zap, Minus, Plus, Star, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { billboards, billboardReviews } from "@/lib/data";
 import BillboardCard from "@/components/BillboardCard";
+import RequestBookingDialog from "@/components/RequestBookingDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import billboard1 from "@/assets/billboard-1.jpg";
 import billboard2 from "@/assets/billboard-2.jpg";
 import billboard3 from "@/assets/billboard-3.jpg";
@@ -17,12 +21,30 @@ const imageMap: Record<string, string> = {
   "billboard-4": billboard4,
 };
 
+type DbListing = { id: string; owner_id: string | null; price_per_day: number; title: string };
+
 const BillboardDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [days, setDays] = useState(7);
+  const [dbListing, setDbListing] = useState<DbListing | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const b = billboards.find((x) => x.id === id);
+
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("listings")
+        .select("id,owner_id,price_per_day,title")
+        .eq("legacy_id", id)
+        .maybeSingle();
+      if (data) setDbListing(data as DbListing);
+    })();
+  }, [id]);
+
   if (!b) return <div className="p-6 text-center text-muted-foreground">Billboard not found</div>;
 
   const img = imageMap[b.image] || billboard1;
@@ -30,10 +52,31 @@ const BillboardDetailPage = () => {
   const reviews = billboardReviews.filter((r) => r.billboardId === b.id);
   const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : null;
 
-  // Related billboards: same city or same tags, excluding current
   const related = billboards
     .filter((x) => x.id !== b.id && (x.city === b.city || x.tags.some((t) => b.tags.includes(t))))
     .slice(0, 4);
+
+  const startChat = async () => {
+    if (!user || !dbListing?.owner_id) return toast.error("Chat unavailable for this listing");
+    const { data: existing } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("listing_id", dbListing.id)
+      .eq("business_id", user.id)
+      .is("order_id", null)
+      .maybeSingle();
+    let convId = existing?.id;
+    if (!convId) {
+      const { data, error } = await supabase
+        .from("conversations")
+        .insert({ listing_id: dbListing.id, business_id: user.id, owner_id: dbListing.owner_id })
+        .select("id")
+        .single();
+      if (error) return toast.error(error.message);
+      convId = data.id;
+    }
+    navigate(`/messages/${convId}`);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -49,7 +92,6 @@ const BillboardDetailPage = () => {
       </div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="px-5 pt-5">
-        {/* Tags */}
         <div className="flex gap-2 mb-2">
           {b.tags.map((tag) => (
             <span key={tag} className="text-[10px] px-2.5 py-1 rounded-full bg-accent/10 text-accent font-medium">{tag}</span>
@@ -69,7 +111,6 @@ const BillboardDetailPage = () => {
           </div>
         )}
 
-        {/* Specs */}
         <div className="grid grid-cols-3 gap-3 mt-5">
           {[
             { icon: Ruler, label: "Size", value: b.size },
@@ -84,7 +125,6 @@ const BillboardDetailPage = () => {
           ))}
         </div>
 
-        {/* Map Placeholder */}
         <div className="mt-5 h-32 rounded-xl bg-secondary flex items-center justify-center">
           <div className="text-center text-muted-foreground">
             <MapPin className="w-6 h-6 mx-auto mb-1 opacity-40" />
@@ -92,25 +132,14 @@ const BillboardDetailPage = () => {
           </div>
         </div>
 
-        {/* Pricing Calculator */}
         <div className="mt-5 p-4 rounded-xl bg-card card-shadow-lg">
           <h3 className="font-semibold text-foreground text-sm">Pricing Calculator</h3>
           <div className="flex items-center justify-between mt-3">
             <span className="text-sm text-muted-foreground">Duration</span>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setDays(Math.max(1, days - 1))}
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
-              >
-                <Minus className="w-3 h-3" />
-              </button>
+              <button onClick={() => setDays(Math.max(1, days - 1))} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"><Minus className="w-3 h-3" /></button>
               <span className="font-semibold text-foreground w-16 text-center">{days} days</span>
-              <button
-                onClick={() => setDays(days + 1)}
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"
-              >
-                <Plus className="w-3 h-3" />
-              </button>
+              <button onClick={() => setDays(days + 1)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"><Plus className="w-3 h-3" /></button>
             </div>
           </div>
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
@@ -119,7 +148,6 @@ const BillboardDetailPage = () => {
           </div>
         </div>
 
-        {/* Reviews */}
         {reviews.length > 0 && (
           <div className="mt-6">
             <h3 className="font-semibold text-foreground text-sm mb-3">Reviews ({reviews.length})</h3>
@@ -129,9 +157,7 @@ const BillboardDetailPage = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">{r.user}</span>
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: r.rating }).map((_, i) => (
-                        <Star key={i} className="w-3 h-3 text-warning fill-warning" />
-                      ))}
+                      {Array.from({ length: r.rating }).map((_, i) => <Star key={i} className="w-3 h-3 text-warning fill-warning" />)}
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{r.comment}</p>
@@ -142,34 +168,39 @@ const BillboardDetailPage = () => {
           </div>
         )}
 
-        {/* Related Billboards */}
         {related.length > 0 && (
           <div className="mt-6">
             <h3 className="font-semibold text-foreground text-sm mb-3">You might also like</h3>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none -mx-5 px-5">
-              {related.map((rb) => (
-                <BillboardCard key={rb.id} billboard={rb} />
-              ))}
+              {related.map((rb) => <BillboardCard key={rb.id} billboard={rb} />)}
             </div>
           </div>
         )}
       </motion.div>
 
-      {/* Fixed CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-4 glass border-t border-border">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div>
+        <div className="max-w-lg mx-auto flex items-center gap-2">
+          <div className="flex-1">
             <p className="text-lg font-bold text-foreground">₹{totalPrice.toLocaleString()}</p>
             <p className="text-xs text-muted-foreground">{days} days</p>
           </div>
+          {dbListing && (
+            <Button variant="outline" size="icon" onClick={startChat} className="h-11 w-11 rounded-xl shrink-0" aria-label="Message owner">
+              <MessageSquare className="w-4 h-4" />
+            </Button>
+          )}
           <Button
-            onClick={() => navigate("/campaign-setup", { state: { billboard: b, days } })}
-            className="h-11 px-8 rounded-xl bg-primary text-primary-foreground font-semibold"
+            onClick={() => dbListing ? setBookingOpen(true) : navigate("/campaign-setup", { state: { billboard: b, days } })}
+            className="h-11 px-6 rounded-xl bg-primary text-primary-foreground font-semibold"
           >
-            Select Billboard
+            {dbListing ? "Request Booking" : "Select Billboard"}
           </Button>
         </div>
       </div>
+
+      {dbListing && (
+        <RequestBookingDialog open={bookingOpen} onOpenChange={setBookingOpen} listing={dbListing} />
+      )}
     </div>
   );
 };

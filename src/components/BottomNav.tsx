@@ -1,10 +1,11 @@
-import { Home, LayoutGrid, User, Sparkles } from "lucide-react";
+import { Home, LayoutGrid, User, MessageSquare, Inbox } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/home" },
+  { icon: Inbox, label: "Orders", path: "/orders" },
+  { icon: MessageSquare, label: "Messages", path: "/messages" },
   { icon: LayoutGrid, label: "Campaigns", path: "/campaigns" },
-  { icon: Sparkles, label: "Talk to Xads", path: "/talk-to-xads" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
@@ -16,7 +17,11 @@ const BottomNav = () => {
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border">
       <div className="max-w-lg mx-auto flex items-center justify-around py-2">
         {navItems.map(({ icon: Icon, label, path }) => {
-          const active = location.pathname === path || (path === "/campaigns" && location.pathname.startsWith("/campaign"));
+          const active =
+            location.pathname === path ||
+            (path === "/campaigns" && location.pathname.startsWith("/campaign")) ||
+            (path === "/orders" && location.pathname.startsWith("/orders")) ||
+            (path === "/messages" && location.pathname.startsWith("/messages"));
           return (
             <button
               key={path}
