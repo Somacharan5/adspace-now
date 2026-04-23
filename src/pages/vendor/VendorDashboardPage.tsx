@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Activity, IndianRupee, TrendingUp, Plus, Bell, Cloud, Printer, Briefcase, ShoppingBag, Users } from "lucide-react";
+import { Building2, Activity, IndianRupee, TrendingUp, Plus, Cloud, Printer, Briefcase, ShoppingBag, Users, Inbox, MessageSquare } from "lucide-react";
 import VendorLayout from "@/components/vendor/VendorLayout";
 import MetricCard from "@/components/vendor/MetricCard";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ const VendorDashboardPage = () => {
   const { user, primaryRole } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState({ listings: 0, available: 0, booked: 0, revenue: 0 });
+  const [orderStats, setOrderStats] = useState({ pending: 0, active: 0, unreadMessages: 0 });
   const [campaigns, setCampaigns] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -18,13 +19,25 @@ const VendorDashboardPage = () => {
     if (!user) return;
     (async () => {
       if (primaryRole === "property_owner") {
-        const { data: listings } = await supabase.from("listings").select("id,status,price_per_day").eq("owner_id", user.id);
+        const [{ data: listings }, { data: orders }, { data: convs }] = await Promise.all([
+          supabase.from("listings").select("id,status,price_per_day").eq("owner_id", user.id),
+          supabase.from("orders").select("id,status,total_cost").eq("owner_id", user.id),
+          supabase.from("conversations").select("owner_unread_count").eq("owner_id", user.id),
+        ]);
         const all = listings ?? [];
+        const ords = orders ?? [];
+        const activeOrders = ords.filter((o) => ["approved", "paid", "printing", "installed", "live"].includes(o.status));
+        const completed = ords.filter((o) => o.status === "completed");
         setStats({
           listings: all.length,
           available: all.filter((l) => l.status === "available").length,
-          booked: all.filter((l) => l.status === "booked").length,
-          revenue: all.filter((l) => l.status === "booked").reduce((s, l) => s + (l.price_per_day ?? 0) * 30, 0),
+          booked: activeOrders.length,
+          revenue: completed.reduce((s, o) => s + (o.total_cost ?? 0), 0) + activeOrders.reduce((s, o) => s + (o.total_cost ?? 0), 0),
+        });
+        setOrderStats({
+          pending: ords.filter((o) => o.status === "pending").length,
+          active: activeOrders.length,
+          unreadMessages: (convs ?? []).reduce((s, c) => s + (c.owner_unread_count ?? 0), 0),
         });
       } else if (primaryRole === "agency") {
         const { count } = await supabase.from("campaigns").select("id", { count: "exact", head: true });
@@ -51,17 +64,23 @@ const VendorDashboardPage = () => {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard icon={Building2} label="Total Listings" value={stats.listings} accent="accent" />
-          <MetricCard icon={Activity} label="Active Campaigns" value={stats.booked} accent="success" />
-          <MetricCard icon={IndianRupee} label="Est. Monthly Revenue" value={`₹${(stats.revenue / 1000).toFixed(0)}k`} accent="warning" />
+          <MetricCard icon={Activity} label="Active Bookings" value={stats.booked} accent="success" />
+          <MetricCard icon={IndianRupee} label="Total Revenue" value={`₹${(stats.revenue / 1000).toFixed(0)}k`} accent="warning" />
           <MetricCard icon={TrendingUp} label="Occupancy Rate" value={`${occupancy}%`} hint={`${stats.booked} of ${stats.listings} booked`} accent="destructive" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <button onClick={() => navigate("/vendor/orders")} className="text-left rounded-2xl border border-border bg-card p-5 hover:border-accent/40 transition-colors">
+            <div className="flex items-center gap-2 mb-2"><Inbox className="w-4 h-4 text-warning" /><h3 className="font-semibold text-sm">Pending Requests</h3></div>
+            <p className="text-3xl font-bold text-foreground">{orderStats.pending}</p>
+            <p className="text-xs text-muted-foreground mt-1">{orderStats.pending > 0 ? "Awaiting your decision" : "All caught up"}</p>
+          </button>
+          <button onClick={() => navigate("/vendor/messages")} className="text-left rounded-2xl border border-border bg-card p-5 hover:border-accent/40 transition-colors">
+            <div className="flex items-center gap-2 mb-2"><MessageSquare className="w-4 h-4 text-accent" /><h3 className="font-semibold text-sm">Unread Messages</h3></div>
+            <p className="text-3xl font-bold text-foreground">{orderStats.unreadMessages}</p>
+            <p className="text-xs text-muted-foreground mt-1">{orderStats.unreadMessages > 0 ? "From buyers and agencies" : "No new messages"}</p>
+          </button>
           <div className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2 mb-3"><Bell className="w-4 h-4 text-accent" /><h3 className="font-semibold">Notifications</h3></div>
-            <p className="text-sm text-muted-foreground">No new notifications. Booking requests will appear here.</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2 mb-3"><Cloud className="w-4 h-4 text-accent" /><h3 className="font-semibold">Weather Insights</h3></div>
+            <div className="flex items-center gap-2 mb-2"><Cloud className="w-4 h-4 text-accent" /><h3 className="font-semibold text-sm">Weather Insights</h3></div>
             <p className="text-sm text-muted-foreground">Add a listing with location to see weather-based visibility forecasts.</p>
           </div>
         </div>
