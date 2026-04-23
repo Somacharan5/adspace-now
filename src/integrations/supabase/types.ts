@@ -213,6 +213,105 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          business_id: string
+          business_unread_count: number
+          created_at: string
+          id: string
+          last_message_at: string
+          last_message_preview: string | null
+          listing_id: string | null
+          order_id: string | null
+          owner_id: string
+          owner_unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          business_unread_count?: number
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          listing_id?: string | null
+          order_id?: string | null
+          owner_id: string
+          owner_unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          business_unread_count?: number
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          listing_id?: string | null
+          order_id?: string | null
+          owner_id?: string
+          owner_unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_bookings: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          listing_id: string
+          order_id: string
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          listing_id: string
+          order_id: string
+          start_date: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          listing_id?: string
+          order_id?: string
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_bookings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_bookings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           area: string | null
@@ -287,6 +386,169 @@ export type Database = {
           width_ft?: number | null
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_url: string | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_url?: string | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_url?: string | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          related_conversation_id: string | null
+          related_order_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          related_conversation_id?: string | null
+          related_order_id?: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          related_conversation_id?: string | null
+          related_order_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_related_conversation_id_fkey"
+            columns: ["related_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_related_order_id_fkey"
+            columns: ["related_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          approved_at: string | null
+          business_id: string
+          created_at: string
+          creative_url: string | null
+          duration_days: number
+          end_date: string
+          id: string
+          listing_id: string
+          notes: string | null
+          owner_id: string
+          paid_at: string | null
+          price_per_day: number
+          rejection_reason: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["order_status"]
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          business_id: string
+          created_at?: string
+          creative_url?: string | null
+          duration_days: number
+          end_date: string
+          id?: string
+          listing_id: string
+          notes?: string | null
+          owner_id: string
+          paid_at?: string | null
+          price_per_day: number
+          rejection_reason?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["order_status"]
+          total_cost: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          business_id?: string
+          created_at?: string
+          creative_url?: string | null
+          duration_days?: number
+          end_date?: string
+          id?: string
+          listing_id?: string
+          notes?: string | null
+          owner_id?: string
+          paid_at?: string | null
+          price_per_day?: number
+          rejection_reason?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -448,6 +710,24 @@ export type Database = {
         | "ended"
       invite_status: "pending" | "accepted" | "declined"
       listing_status: "available" | "booked" | "inactive"
+      notification_type:
+        | "order_request"
+        | "order_approved"
+        | "order_rejected"
+        | "order_paid"
+        | "order_status_change"
+        | "new_message"
+        | "system"
+      order_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "paid"
+        | "printing"
+        | "installed"
+        | "live"
+        | "completed"
+        | "cancelled"
       team_role: "viewer" | "commenter" | "editor" | "payer"
     }
     CompositeTypes: {
@@ -595,6 +875,26 @@ export const Constants = {
       ],
       invite_status: ["pending", "accepted", "declined"],
       listing_status: ["available", "booked", "inactive"],
+      notification_type: [
+        "order_request",
+        "order_approved",
+        "order_rejected",
+        "order_paid",
+        "order_status_change",
+        "new_message",
+        "system",
+      ],
+      order_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "paid",
+        "printing",
+        "installed",
+        "live",
+        "completed",
+        "cancelled",
+      ],
       team_role: ["viewer", "commenter", "editor", "payer"],
     },
   },
