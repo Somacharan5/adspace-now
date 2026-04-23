@@ -95,7 +95,7 @@ const VendorDashboardPage = () => {
         <p className="text-sm text-muted-foreground mt-1 mb-6">Manage your printing jobs</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <MetricCard icon={Printer} label="Active Jobs" value={0} accent="accent" />
-          <MetricCard icon={Bell} label="Incoming Requests" value={0} accent="warning" />
+          <MetricCard icon={Inbox} label="Incoming Requests" value={0} accent="warning" />
           <MetricCard icon={Building2} label="Nearby Owners" value={0} accent="success" />
         </div>
         <div className="rounded-2xl border border-border bg-card p-6 mt-6 text-center">
