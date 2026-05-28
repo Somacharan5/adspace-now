@@ -5,7 +5,6 @@ import { ArrowRight, Shield, Mail, Lock, User as UserIcon, Building2, Printer, B
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import logo from "@/assets/xads-logo.png";
 import type { AppRole } from "@/contexts/AuthContext";
@@ -72,16 +71,29 @@ const LoginPage = () => {
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/home`,
+      const callbackUrl = isVendor ? `${window.location.origin}/vendor/dashboard` : `${window.location.origin}/home`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callbackUrl,
+          queryParams: {
+            access_type: "offline",
+            prompt: "select_account",
+          },
+        },
       });
-      if (result.error) {
+      if (error) {
         toast.error("Google sign-in failed. Try email instead.");
         setLoading(false);
         return;
       }
-      if (result.redirected) return;
-      navigate("/home");
+      if (data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+
+      toast.error("Google sign-in could not start.");
+      setLoading(false);
     } catch (e: any) {
       toast.error(e.message ?? "Google sign-in failed");
       setLoading(false);
