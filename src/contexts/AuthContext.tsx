@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole = "admin" | "user" | "property_owner" | "printing_vendor" | "agency" | "business";
 
+const PENDING_ROLE_KEY = "xads_pending_role";
+const VALID_ROLES: AppRole[] = ["admin", "user", "property_owner", "printing_vendor", "agency", "business"];
+
 type AuthContextValue = {
   user: User | null;
   session: Session | null;
@@ -42,12 +45,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRoleLoading(false);
   };
 
+  const applyPendingRole = async (uid: string) => {
+    const pendingRole = window.sessionStorage.getItem(PENDING_ROLE_KEY) as AppRole | null;
+
+    if (!pendingRole || !VALID_ROLES.includes(pendingRole)) return;
+
+    const { error } = await supabase
+      .from("user_role_selections")
+      .upsert({ user_id: uid, primary_role: pendingRole }, { onConflict: "user_id" });
+
+    if (!error) {
+      window.sessionStorage.removeItem(PENDING_ROLE_KEY);
+    }
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
-        setTimeout(() => fetchRole(newSession.user.id), 0);
+        setTimeout(async () => {
+          await applyPendingRole(newSession.user.id);
+          await fetchRole(newSession.user.id);
+        }, 0);
       } else {
         setPrimaryRole(null);
         setRoleLoading(false);
@@ -58,7 +78,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      if (session?.user) fetchRole(session.user.id);
+      if (session?.user) {
+        applyPendingRole(session.user.id).then(() => fetchRole(session.user.id));
+      }
       else setRoleLoading(false);
     });
 
