@@ -5,13 +5,13 @@ import { ArrowRight, Shield, Mail, Lock, User as UserIcon, Building2, Printer, B
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import logo from "@/assets/xads-logo.png";
 import type { AppRole } from "@/contexts/AuthContext";
 
 type Mode = "signin" | "signup";
 type Flow = "business" | "vendor-pick" | "vendor-form";
+const PENDING_ROLE_KEY = "xads_pending_role";
 
 const VENDOR_ROLES: { value: AppRole; label: string; desc: string; icon: any }[] = [
   { value: "property_owner", label: "Property Owner", desc: "List your billboards & earn", icon: Building2 },
@@ -72,17 +72,35 @@ const LoginPage = () => {
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/home`,
+      const intendedRole: AppRole = flow === "vendor-form" && vendorRole ? vendorRole : "business";
+      window.sessionStorage.setItem(PENDING_ROLE_KEY, intendedRole);
+      const callbackUrl = isVendor ? `${window.location.origin}/vendor/dashboard` : `${window.location.origin}/home`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callbackUrl,
+          queryParams: {
+            access_type: "offline",
+            prompt: "select_account",
+          },
+        },
       });
-      if (result.error) {
+      if (error) {
+        window.sessionStorage.removeItem(PENDING_ROLE_KEY);
         toast.error("Google sign-in failed. Try email instead.");
         setLoading(false);
         return;
       }
-      if (result.redirected) return;
-      navigate("/home");
+      if (data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+
+      toast.error("Google sign-in could not start.");
+      window.sessionStorage.removeItem(PENDING_ROLE_KEY);
+      setLoading(false);
     } catch (e: any) {
+      window.sessionStorage.removeItem(PENDING_ROLE_KEY);
       toast.error(e.message ?? "Google sign-in failed");
       setLoading(false);
     }
