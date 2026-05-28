@@ -11,6 +11,7 @@ import type { AppRole } from "@/contexts/AuthContext";
 
 type Mode = "signin" | "signup";
 type Flow = "business" | "vendor-pick" | "vendor-form";
+const PENDING_ROLE_KEY = "xads_pending_role";
 
 const VENDOR_ROLES: { value: AppRole; label: string; desc: string; icon: any }[] = [
   { value: "property_owner", label: "Property Owner", desc: "List your billboards & earn", icon: Building2 },
@@ -71,6 +72,8 @@ const LoginPage = () => {
   const handleGoogle = async () => {
     setLoading(true);
     try {
+      const intendedRole: AppRole = flow === "vendor-form" && vendorRole ? vendorRole : "business";
+      window.sessionStorage.setItem(PENDING_ROLE_KEY, intendedRole);
       const callbackUrl = isVendor ? `${window.location.origin}/vendor/dashboard` : `${window.location.origin}/home`;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -83,6 +86,7 @@ const LoginPage = () => {
         },
       });
       if (error) {
+        window.sessionStorage.removeItem(PENDING_ROLE_KEY);
         toast.error("Google sign-in failed. Try email instead.");
         setLoading(false);
         return;
@@ -93,8 +97,10 @@ const LoginPage = () => {
       }
 
       toast.error("Google sign-in could not start.");
+      window.sessionStorage.removeItem(PENDING_ROLE_KEY);
       setLoading(false);
     } catch (e: any) {
+      window.sessionStorage.removeItem(PENDING_ROLE_KEY);
       toast.error(e.message ?? "Google sign-in failed");
       setLoading(false);
     }
