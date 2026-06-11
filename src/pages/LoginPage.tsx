@@ -5,6 +5,7 @@ import { ArrowRight, Shield, Mail, Lock, User as UserIcon, Building2, Printer, B
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import logo from "@/assets/xads-logo.png";
 import type { AppRole } from "@/contexts/AuthContext";
