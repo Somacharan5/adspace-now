@@ -75,31 +75,18 @@ const LoginPage = () => {
     try {
       const intendedRole: AppRole = flow === "vendor-form" && vendorRole ? vendorRole : "business";
       window.sessionStorage.setItem(PENDING_ROLE_KEY, intendedRole);
-      const callbackUrl = isVendor ? `${window.location.origin}/vendor/dashboard` : `${window.location.origin}/home`;
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: callbackUrl,
-          queryParams: {
-            access_type: "offline",
-            prompt: "select_account",
-          },
-        },
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
       });
-      if (error) {
+      if (result.error) {
         window.sessionStorage.removeItem(PENDING_ROLE_KEY);
         toast.error("Google sign-in failed. Try email instead.");
         setLoading(false);
         return;
       }
-      if (data.url) {
-        window.location.assign(data.url);
-        return;
-      }
-
-      toast.error("Google sign-in could not start.");
-      window.sessionStorage.removeItem(PENDING_ROLE_KEY);
-      setLoading(false);
+      if (result.redirected) return;
+      navigate(intendedRole === "business" ? "/home" : "/vendor/dashboard");
     } catch (e: any) {
       window.sessionStorage.removeItem(PENDING_ROLE_KEY);
       toast.error(e.message ?? "Google sign-in failed");
